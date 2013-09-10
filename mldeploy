@@ -66,10 +66,11 @@ if [[ "`sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_serv
     sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
 fi
 
-log Executing /tmp/$LATEST_BUILD...
+# Installing...
+log Installing /tmp/$LATEST_BUILD...
 
 chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
-sudo -u cariden -s /tmp/$LATEST_BUILD -d $ROOT_DIR -y || die Failed to install. 
+sudo -u cariden -sh -c "/tmp/$LATEST_BUILD -d $ROOT_DIR -y" || die Failed to install. 
 
 log Restarting tomcat
 sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
