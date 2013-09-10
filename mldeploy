@@ -1,8 +1,9 @@
 #!/bin/bash 
 
-J_PROJECT=CANARY
 J_SERVER=jenkins.mv.cariden.com
+J_PROJECT=CANARY
 J_BASE_URL=http://$J_SERVER/job/CANARY/label=linux64/lastStableBuild/artifact
+
 ROOT_DIR=/opt/cariden
 
 die() {
@@ -15,15 +16,15 @@ log() {
 }
 
 # check if we have network connectivity and try to fix it if not
-ping jenkins.mv.cariden.com -c 1 &> /dev/null
+ping $J_SERVER -c 1 &> /dev/null
 pingable=$?;
 if [[ $pingable != 0 && `grep jenkins /etc/hosts | wc -l` == 0 ]]; then
    log "Can't access $J_SERVER. Trying to add it to /etc/hosts..."
-   sudo sh -c 'echo 172.16.0.21   jenkins.mv.cariden.com >> /etc/hosts'
+   sudo sh -c "echo 172.16.0.21   $J_SERVER >> /etc/hosts"
 fi
 
 # check connectivty again
-ping jenkins.mv.cariden.com -c 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
+ping $J_SERVER -c 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
 
 # find latest build
 loc=`curl -s http://$J_SERVER/job/\
