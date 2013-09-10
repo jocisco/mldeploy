@@ -16,7 +16,7 @@ log() {
 }
 
 # check if we have network connectivity and try to fix it if not
-ping $J_SERVER -c 1 &> /dev/null
+ping $J_SERVER -c 1 -w 1 &> /dev/null
 pingable=$?;
 if [[ $pingable != 0 && `grep jenkins /etc/hosts | wc -l` == 0 ]]; then
    log "Can't access $J_SERVER. Trying to add it to /etc/hosts..."
@@ -24,7 +24,7 @@ if [[ $pingable != 0 && `grep jenkins /etc/hosts | wc -l` == 0 ]]; then
 fi
 
 # check connectivty again
-ping $J_SERVER -c 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
+ping $J_SERVER -c 1 -w 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
 
 # find latest build
 loc=`curl -s http://$J_SERVER/job/\
