@@ -3,8 +3,9 @@
 J_PROJECT=CANARY
 J_SERVER=jenkins.mv.cariden.com
 J_BASE_URL=http://$J_SERVER/job/CANARY/label=linux64/lastStableBuild/artifact
+ROOT_DIR=/opt/cariden
 
-fail() {
+die() {
     echo "### ERROR ### $*. Exiting."
     exit 1
 }
@@ -13,19 +14,21 @@ log() {
     echo --- $*
 }
 
+# check if we have network connectivity and try to fix it if not
 ping jenkins.mv.cariden.com -c 1 &> /dev/null
 pingable=$?;
-
 if [[ $pingable != 0 && `grep jenkins /etc/hosts | wc -l` == 0 ]]; then
    log "Can't access $J_SERVER. Trying to add it to /etc/hosts..."
    sudo sh -c 'echo 172.16.0.21   jenkins.mv.cariden.com >> /etc/hosts'
 fi
 
-ping jenkins.mv.cariden.com -c 1 &>/dev/null || fail "Can't reach $J_SERVER. Try to ping it."
+# check connectivty again
+ping jenkins.mv.cariden.com -c 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
 
+# find latest build
 loc=`curl -s http://$J_SERVER/job/\
 $J_PROJECT/label=linux64/lastStableBuild/api/json?pretty=true |\
-grep -o 'build.*Linux-x86_64.bin'` || fail "Can't retrieve the latest build."
+grep -o 'build.*Linux-x86_64.bin'` || die "Can't retrieve the latest build."
 
 LATEST_BUILD=`echo $loc | grep -o 'Cariden.*'`
 
@@ -36,39 +39,38 @@ if [[ -f /tmp/$LATEST_BUILD ]]; then
     log Using existing file /tmp/$LATEST_BUILD.
 else
     log Downloading file...
-    curl -o /tmp/$LATEST_BUILD -O $J_BASE_URL/$loc || fail Failed to download to MATE package.
+    curl -o /tmp/$LATEST_BUILD -O $J_BASE_URL/$loc || die Failed to download to MATE package.
 fi
 
 
 # check if cariden user exits or create it
 if [[ `cat /etc/passwd | grep cariden | wc -l` == 0 ]]; then
     log Creating cariden user
-    sudo /usr/sbin/useradd --home-dir /opt/cariden --create-home cariden || fail Failed to create user cariden.
-    sudo chmod 755 /opt/cariden || fail Failed to set permissions on /opt/cariden
+    sudo /usr/sbin/useradd --home-dir $ROOT_DIR --create-home cariden || die Failed to create user cariden.
+    sudo chmod 755 $ROOT_DIR || die Failed to set permissions on $ROOT_DIR
 else
     log Using existing cariden user.
 fi
 
-# check if /opt/cariden exits or create it
-if [[ ! -d /opt/cariden ]]; then
-    log Creating /opt/cariden...
-    sudo mkdir -p /opt/cariden || fail Failed to create /opt/cariden
-    sudo chown cariden:cariden /opt/cariden || fail to change ownership of /opt/cariden
+# check if $ROOT_DIR exits or create it
+if [[ ! -d $ROOT_DIR ]]; then
+    log Creating $ROOT_DIR...
+    sudo mkdir -p $ROOT_DIR || die Failed to create $ROOT_DIR
+    sudo chown cariden:cariden $ROOT_DIR || die to change ownership of $ROOT_DIR
 fi
 
-
-
-if [[ "`sudo -u cariden -s /opt/cariden/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
+# shutdown tomcat if needed
+if [[ "`sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
     log shutting down tomcat
-    sudo -u cariden -s /opt/cariden/software/mate/current/bin/embedded_web_server -action stop || fail Failed to shut down tomcat.
+    sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
 fi
 
 log Executing /tmp/$LATEST_BUILD...
 
-chmod +x /tmp/$LATEST_BUILD || fail Failed to add execution permissions to /tmp/$LATEST_BUILD.
-sudo -u cariden -s /tmp/$LATEST_BUILD -d /opt/cariden -y || fail Failed to install. 
+chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
+sudo -u cariden -s /tmp/$LATEST_BUILD -d $ROOT_DIR -y || die Failed to install. 
 
 log Restarting tomcat
-sudo -u cariden -s /opt/cariden/software/mate/current/bin/embedded_web_server -action start || fail Failed to start tomcat
+sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
 sleep 5
-sudo -u cariden -s /opt/cariden/software/mate/current/bin/embedded_web_server -action status || fail Failed to retrieve tomcat status
+sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status || die Failed to retrieve tomcat status
