@@ -86,7 +86,7 @@ DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 log Setting up the environment
 sudo mkdir -p /opt/cariden/etc/
 sudo cp MATE_Floating.lic /opt/cariden/etc
-sudo cp .bashrc /opt/cariden
+sudo cp bashrc /opt/cariden/.bashrc
 sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
 
 log Restarting tomcat
