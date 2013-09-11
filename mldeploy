@@ -5,6 +5,7 @@ J_PROJECT=CANARY
 J_BASE_URL=http://$J_SERVER/job/CANARY/label=linux64/lastStableBuild/artifact
 
 ROOT_DIR=/opt/cariden
+CARIDEN_USER=cariden
 
 die() {
     echo "### ERROR ### $*. Exiting."
@@ -15,6 +16,7 @@ log() {
     echo --- $*
 }
 
+#---------------------------------------------------------------------
 # check if we have network connectivity and try to fix it if not
 ping $J_SERVER -c 1 -w 1 &> /dev/null
 pingable=$?;
@@ -26,6 +28,7 @@ fi
 # check connectivty again
 ping $J_SERVER -c 1 -w 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping it."
 
+#---------------------------------------------------------------------
 # find latest build
 loc=`curl -s http://$J_SERVER/job/\
 $J_PROJECT/label=linux64/lastStableBuild/api/json?pretty=true |\
@@ -35,6 +38,7 @@ LATEST_BUILD=`echo $loc | grep -o 'Cariden.*'`
 
 log Latest successful build: $LATEST_BUILD.
 
+#---------------------------------------------------------------------
 # check if the file already exists
 if [[ -f /tmp/$LATEST_BUILD ]]; then 
     log Using existing file /tmp/$LATEST_BUILD.
@@ -44,60 +48,68 @@ else
 fi
 
 
-# check if cariden user exits or create it
-if [[ `cat /etc/passwd | grep cariden | wc -l` == 0 ]]; then
-    log Creating cariden user
-    sudo /usr/sbin/useradd --home-dir $ROOT_DIR --create-home cariden || die Failed to create user cariden.
+#---------------------------------------------------------------------
+# check if $CARIDEN_USER user exits or create it
+if [[ `cat /etc/passwd | grep $CARIDEN_USER | wc -l` == 0 ]]; then
+    log Creating user $CARIDEN_USER
+    sudo /usr/sbin/useradd --home-dir $ROOT_DIR --create-home $CARIDEN_USER || die Failed to create user $CARIDEN_USER.
     sudo chmod 755 $ROOT_DIR || die Failed to set permissions on $ROOT_DIR
 else
-    log Using existing cariden user.
+    log Using existing $CARIDEN_USER user.
 fi
 
+#---------------------------------------------------------------------
 # check if $ROOT_DIR exits or create it
 if [[ ! -d $ROOT_DIR ]]; then
     log Creating $ROOT_DIR...
     sudo mkdir -p $ROOT_DIR || die Failed to create $ROOT_DIR
-    sudo chown cariden:cariden $ROOT_DIR || die to change ownership of $ROOT_DIR
+    sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR || die to change ownership of $ROOT_DIR
 fi
 
+#---------------------------------------------------------------------
 # shutdown tomcat if needed
-if [[ "`sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
+if [[ "`sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
     log Shutting down tomcat
-    sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
+    sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
+    sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status || die Failed to retrieve tomcat status
 fi
 
+#---------------------------------------------------------------------
 # Installing...
 log Installing /tmp/$LATEST_BUILD...
 
 sudo chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
-#sudo -u cariden sh -c "/tmp/$LATEST_BUILD -d /tmp" || die Failed to install. 
+#sudo -u $CARIDEN_USER sh -c "/tmp/$LATEST_BUILD -d /tmp" || die Failed to install. 
 DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 
-# Only install if the package is not under /opt/cariden/software/mate
-[[ -d /opt/cariden/software/mate/$DIR_NAME ]] || {
+# Only install if the package is not under $ROOT_DIR/software/mate
+[[ -d $ROOT_DIR/software/mate/$DIR_NAME ]] || {
     pushd /tmp
-    sudo -u cariden -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
-    sudo -u cariden -s mkdir -p /opt/cariden/software/mate || die Unable to create the dir structure
-    sudo -u cariden -s mv $DIR_NAME /opt/cariden/software/mate || die Unable to move the the files under /opt/cariden/...
+    sudo -u $CARIDEN_USER -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
+    sudo -u $CARIDEN_USER -s mkdir -p $ROOT_DIR/software/mate || die Unable to create the dir structure
+    sudo -u $CARIDEN_USER -s mv $DIR_NAME $ROOT_DIR/software/mate || die Unable to move the the files under $ROOT_DIR/...
+    sudo -u $CARIDEN_USER -s ln -snf $ROOT_DIR/software/mate/$DIR_NAME $ROOT_DIR/software/mate/current || die Unable to create the symbolic link 
     popd
-    sudo -u cariden -s ln -snf /opt/cariden/software/mate/$DIR_NAME /opt/cariden/software/mate/current || die Unable to create the symbolic link 
 }
 
+#---------------------------------------------------------------------
 log Setting up the environment
-sudo mkdir -p /opt/cariden/etc/
-sudo cp MATE_Floating.lic /opt/cariden/etc
-sudo cp bashrc /opt/cariden/.bashrc
-sudo cp materc /opt/cariden/.materc
-sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc /opt/cariden/.materc
+sudo mkdir -p $ROOT_DIR/etc/; sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR/etc 
+sudo cp MATE_Floating.lic $ROOT_DIR/etc; sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR/etc/MATE_Floating.lic 
+sudo cp bashrc $ROOT_DIR/.bashrc; sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR/.bashrc
+sudo cp materc $ROOT_DIR/.materc; sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR/.materc
 
+#---------------------------------------------------------------------
 log Restarting tomcat
-sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
+sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
 sleep 5
-sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status || die Failed to retrieve tomcat status
+sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status || die Failed to retrieve tomcat status
 
+#---------------------------------------------------------------------
 log Adding automatic server start @reboot
-sudo -u cariden sh -c "(crontab -l &> /dev/null ; echo \"@reboot $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start\") | uniq - | crontab -" || die Failed to add to crontab
+sudo -u $CARIDEN_USER sh -c "(crontab -l &> /dev/null ; echo \"@reboot $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start\") | uniq - | crontab -" || die Failed to add to crontab
 
+#---------------------------------------------------------------------
 log Deactivating the firewall
 sudo service iptables stop; sudo chkconfig iptables off
 
