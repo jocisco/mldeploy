@@ -75,12 +75,12 @@ DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 
 # Only install if the package is not under /opt/cariden/software/mate
 [[ -d /opt/cariden/software/mate/$DIR_NAME ]] || {
-  pushd /tmp
-  sudo -u cariden -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
-  sudo -u cariden -s mkdir -p /opt/cariden/software/mate || die Unable to create the dir structure
-  sudo -u cariden -s mv $DIR_NAME /opt/cariden/software/mate || die Unable to move the the files under /opt/cariden/...
-  popd
-  sudo -u cariden -s ln -snf /opt/cariden/software/mate/$DIR_NAME /opt/cariden/software/mate/current || die Unable to create the symbolic link 
+    pushd /tmp
+    sudo -u cariden -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
+    sudo -u cariden -s mkdir -p /opt/cariden/software/mate || die Unable to create the dir structure
+    sudo -u cariden -s mv $DIR_NAME /opt/cariden/software/mate || die Unable to move the the files under /opt/cariden/...
+    popd
+    sudo -u cariden -s ln -snf /opt/cariden/software/mate/$DIR_NAME /opt/cariden/software/mate/current || die Unable to create the symbolic link 
 }
 
 log Setting up the environment
