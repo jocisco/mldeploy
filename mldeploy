@@ -85,23 +85,9 @@ DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 
 log Setting up the environment
 sudo mkdir -p /opt/cariden/etc/
-
-sudo sh -c 'cat << EOF > /opt/cariden/etc/MATE_Floating.lic
-SERVER 172.16.0.248 000c2977d5e7
-VENDOR cisco
-USE_SERVER
-EOF'
-
-sudo sh -c 'cat << EOF > /opt/cariden/.bashrc
-export CARIDEN_ROOT=/opt/cariden
-export CARIDEN_HOME=/opt/cariden/software/mate/current
-export LD_LIBRARY_PATH=$CARIDEN_HOME/lib:$LD_LIBRARY_PATH
-PATH=$PATH:/opt/cariden/software/mate/current/bin
-PATH=$PATH:$CARIDEN_HOME/bin
-export PATH
-EOF'
-
-sudo chown cariden:cariden /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
+sudo cp MATE_Floating.lic /opt/cariden/etc
+sudo cp .bashrc /opt/cariden
+sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
 
 log Restarting tomcat
 sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
