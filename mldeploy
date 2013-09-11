@@ -62,7 +62,7 @@ fi
 
 # shutdown tomcat if needed
 if [[ "`sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
-    log shutting down tomcat
+    log Shutting down tomcat
     sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
 fi
 
@@ -86,7 +86,8 @@ DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 log Setting up the environment
 sudo mkdir -p /opt/cariden/etc/
 sudo cp MATE_Floating.lic /opt/cariden/etc
-sudo cp .bashrc /opt/cariden
+sudo cp bashrc /opt/cariden/.bashrc
+sudo curl -s https://raw.github.com/jocisco/ml/master/materc >> /opt/cariden/.bashrc
 sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
 
 log Restarting tomcat
