@@ -9,7 +9,7 @@ CARIDEN_USER=cariden
 
 die() {
     echo "### ERROR ### $*. Exiting."
-    exit 1
+        exit 1
 }
 
 log() {
@@ -21,8 +21,8 @@ log() {
 ping $J_SERVER -c 1 -w 1 &> /dev/null
 pingable=$?;
 if [[ $pingable != 0 && `grep jenkins /etc/hosts | wc -l` == 0 ]]; then
-   log "Can't access $J_SERVER. Trying to add it to /etc/hosts..."
-   sudo sh -c "echo 172.16.0.21   $J_SERVER >> /etc/hosts"
+log "Can't access $J_SERVER. Trying to add it to /etc/hosts..."
+sudo sh -c "echo 172.16.0.21   $J_SERVER >> /etc/hosts"
 fi
 
 # check connectivty again
@@ -31,55 +31,58 @@ ping $J_SERVER -c 1 -w 1 &>/dev/null || die "Can't reach $J_SERVER. Try to ping 
 #---------------------------------------------------------------------
 # find latest build
 loc=`curl -s http://$J_SERVER/job/\
-$J_PROJECT/label=linux64/lastStableBuild/api/json?pretty=true |\
-grep -o 'build.*Linux-x86_64.bin'` || die "Can't retrieve the latest build."
+    $J_PROJECT/label=linux64/lastStableBuild/api/json?pretty=true |\
+    grep -o 'build.*Linux-x86_64.bin'` || die "Can't retrieve the latest build."
 
-LATEST_BUILD=`echo $loc | grep -o 'Cariden.*'`
+    LATEST_BUILD=`echo $loc | grep -o 'Cariden.*'`
 
-log Latest successful build: $LATEST_BUILD.
-
-#---------------------------------------------------------------------
-# check if the file already exists
-if [[ -f /tmp/$LATEST_BUILD ]]; then 
-    log Using existing file /tmp/$LATEST_BUILD.
-else
-    log Downloading file...
-    curl -o /tmp/$LATEST_BUILD -O $J_BASE_URL/$loc || die Failed to download to MATE package.
-fi
-
+    log Latest successful build: $LATEST_BUILD.
 
 #---------------------------------------------------------------------
 # check if $CARIDEN_USER user exits or create it
-if [[ `cat /etc/passwd | grep $CARIDEN_USER | wc -l` == 0 ]]; then
+    if [[ `cat /etc/passwd | grep $CARIDEN_USER | wc -l` == 0 ]]; then
     log Creating user $CARIDEN_USER
     sudo /usr/sbin/useradd --home-dir $ROOT_DIR --create-home $CARIDEN_USER || die Failed to create user $CARIDEN_USER.
     sudo chmod 755 $ROOT_DIR || die Failed to set permissions on $ROOT_DIR
-else
+    else
     log Using existing $CARIDEN_USER user.
-fi
+    fi
 
 #---------------------------------------------------------------------
 # check if $ROOT_DIR exits or create it
-if [[ ! -d $ROOT_DIR ]]; then
+    if [[ ! -d $ROOT_DIR ]]; then
     log Creating $ROOT_DIR...
     sudo mkdir -p $ROOT_DIR || die Failed to create $ROOT_DIR
     sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR || die to change ownership of $ROOT_DIR
-fi
+    fi
 
 #---------------------------------------------------------------------
-log Killing anything MATE related running...
-sudo kill -9 $(ps aux | grep mate | grep -v grep | awk '{print $2}') &> /dev/null
+    log Killing anything MATE related running...
+    sudo kill -9 $(ps aux | grep mate | grep -v grep | awk '{print $2}') &> /dev/null
 
 #---------------------------------------------------------------------
-# Installing...
-log Installing /tmp/$LATEST_BUILD...
+# Installing only if this version is not installed...
+[[ -d $ROOT_DIR/software/mate/$DIR_NAME ]] || {
 
-sudo chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
+#---------------------------------------------------------------------
+# check if the file already exists
+    if [[ -f /tmp/$LATEST_BUILD ]]; then 
+        log Using existing file /tmp/$LATEST_BUILD.
+    elif [[ -f /vagrant/$LATEST_BUILD ]]; then
+        log Using existing file /vagrant/$LATEST_BUILD
+        cp /vagrant/$LATEST_BUILD /tmp
+    else
+        log Downloading file from $J_BASE_URL/$loc...
+        curl -o /tmp/$LATEST_BUILD -O $J_BASE_URL/$loc || die Failed to download to MATE package.
+    fi
+
+    log Installing /tmp/$LATEST_BUILD...
+
+    sudo chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
 #sudo -u $CARIDEN_USER sh -c "/tmp/$LATEST_BUILD -d /tmp" || die Failed to install. 
-DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
+    DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
 
 # Only install if the package is not under $ROOT_DIR/software/mate
-[[ -d $ROOT_DIR/software/mate/$DIR_NAME ]] || {
     pushd /tmp
     sudo -u $CARIDEN_USER -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
     sudo -u $CARIDEN_USER -s mkdir -p $ROOT_DIR/software/mate || die Unable to create the dir structure
