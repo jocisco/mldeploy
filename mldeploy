@@ -83,6 +83,22 @@ DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
   sudo -u cariden -s ln -snf /opt/cariden/software/mate/$DIR_NAME /opt/cariden/software/mate/current || die Unable to create the symbolic link 
 }
 
+log Setting up the environment
+sudo mkdir -p /opt/cariden/etc/
+
+sudo sh -c 'cat << EOF > /opt/cariden/etc/MATE_Floating.lic
+SERVER 172.16.0.248 000c2977d5e7
+VENDOR cisco
+USE_SERVER
+EOF'
+
+sudo sh -c 'cat << EOF > /opt/cariden/.bashrc
+PATH=\$PATH:/opt/cariden/software/mate/current/bin
+export CARIDEN_ROOT=/opt/cariden
+EOF'
+
+sudo chown cariden:cariden /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
+
 log Restarting tomcat
 sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
 sleep 5
