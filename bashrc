@@ -5,4 +5,4 @@ PATH=$PATH:/opt/cariden/software/mate/current/bin
 PATH=$PATH:$CARIDEN_HOME/bin
 export PATH
 
-source .materc
+source ~/.materc
