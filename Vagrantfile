@@ -14,9 +14,12 @@ Vagrant.configure("2") do |config|
   date >> /tmp//vagrant_provisioned_at
   sudo yum install git -y
   echo --- Dowloading deployment scripts...
-  [[ -d mldeploy ]] || sudo -u vagrant sh -c 'git clone https://github.com/jocisco/mldeploy.git'
-  sudo -u vagrant sh -c 'cd mldeploy; git pull;'                                                                              
-  cd mldeploy
+  if [[ -d mldeploy ]]; then
+    sudo -u vagrant sh -c 'cd mldeploy; git pull;'                                                                              
+  else
+    sudo -u vagrant sh -c 'git clone https://jocisco@github.com/jocisco/mldeploy.git'
+    cd mldeploy
+  fi
   bash install.sh || { echo Failed to start the install process. Exiting; exit 1; }
 SCRIPT
 
