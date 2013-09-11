@@ -40,21 +40,21 @@ grep -o 'build.*Linux-x86_64.bin'` || die "Can't determine the name of the lates
 
 #---------------------------------------------------------------------
 # check if $CARIDEN_USER user exits or create it
-    if [[ `cat /etc/passwd | grep $CARIDEN_USER | wc -l` == 0 ]]; then
+if [[ `cat /etc/passwd | grep $CARIDEN_USER | wc -l` == 0 ]]; then
     log Creating user $CARIDEN_USER
     sudo /usr/sbin/useradd --home-dir $ROOT_DIR --create-home $CARIDEN_USER || die Failed to create user $CARIDEN_USER
     sudo chmod 755 $ROOT_DIR || die Failed to set permissions on $ROOT_DIR
-    else
+else
     log Using existing $CARIDEN_USER user.
-    fi
+fi
 
 #---------------------------------------------------------------------
 # check if $ROOT_DIR exits or create it
-    if [[ ! -d $ROOT_DIR ]]; then
+if [[ ! -d $ROOT_DIR ]]; then
     log Creating $ROOT_DIR...
     sudo mkdir -p $ROOT_DIR || die Failed to create $ROOT_DIR
     sudo chown $CARIDEN_USER:$CARIDEN_USER $ROOT_DIR || die to change ownership of $ROOT_DIR
-    fi
+fi
 
 #---------------------------------------------------------------------
     log Killing anything MATE related running...
