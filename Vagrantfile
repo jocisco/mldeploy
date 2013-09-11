@@ -11,12 +11,13 @@ Vagrant.configure("2") do |config|
 
   $script = <<SCRIPT
   echo --- Provisioning...
-  date >> /tmp//vagrant_provisioned_at                                                                                                                                                
+  date >> /tmp//vagrant_provisioned_at
   sudo yum install git -y
   echo --- Dowloading deployment scripts...
   [[ -d mldeploy ]] || sudo -u vagrant sh -c 'git clone https://github.com/jocisco/mldeploy.git'
-  sudo -u vagrant sh -c 'cd mldeploy; git pull;'
-  sudo -u vagrant sh -c 'cd mldeploy; bash install.sh' || { echo Failed to start the install process. Exiting; exit 1; }
+  sudo -u vagrant sh -c 'cd mldeploy; git pull;'                                                                              
+  cd mldeploy
+  bash install.sh || { echo Failed to start the install process. Exiting; exit 1; }
 SCRIPT
 
   config.vm.provision "shell", inline: $script
