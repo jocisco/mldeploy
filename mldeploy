@@ -67,12 +67,8 @@ if [[ ! -d $ROOT_DIR ]]; then
 fi
 
 #---------------------------------------------------------------------
-# shutdown tomcat if needed
-if [[ "`sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status 2>&1 | grep -o "The server is running" | wc -l`" == 1 ]]; then
-    log Shutting down tomcat
-    sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action stop || die Failed to shut down tomcat.
-    sudo -u $CARIDEN_USER -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action status || die Failed to retrieve tomcat status
-fi
+log Killing anything MATE related running...
+sudo kill -9 $(ps aux | grep mate | grep -v grep | awk '{print $2}') &> /dev/null
 
 #---------------------------------------------------------------------
 # Installing...
