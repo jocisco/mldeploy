@@ -69,8 +69,16 @@ fi
 # Installing...
 log Installing /tmp/$LATEST_BUILD...
 
-chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
-sudo -u cariden sh -c "/tmp/$LATEST_BUILD -d /tmp" || die Failed to install. 
+sudo chmod +x /tmp/$LATEST_BUILD || die Failed to add execution permissions to /tmp/$LATEST_BUILD.
+#sudo -u cariden sh -c "/tmp/$LATEST_BUILD -d /tmp" || die Failed to install. 
+DIR_NAME=`echo $LATEST_BUILD | sed 's/\.bin//'`
+
+[[ -d /opt/cariden/software/mate/$DIR_NAME ]] || {
+  sudo -u cariden -s /tmp/$LATEST_BUILD -x 2> /dev/null || die Unable to uncompress the package
+  sudo -u cariden -s mkdir -p /opt/cariden/software/mate || die Unable to create the dir structure
+  sudo -u cariden -s mv $DIR_NAME /opt/cariden/software/mate || die Unable to move the the files under /opt/cariden/...
+  sudo -u cariden -s ln -snf /opt/cariden/software/mate/$DIR_NAME /opt/cariden/software/mate/current || die Unable to create the symbolic link 
+}
 
 log Restarting tomcat
 sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
@@ -80,4 +88,7 @@ sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -acti
 log Adding automatic server start @reboot
 sudo -u cariden sh -c "(crontab -l &> /dev/null ; echo \"@reboot $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start\") | uniq - | crontab -" || die Failed to add to crontab
 
-log Done. You may to deactivate your firewall: sudo service iptables stop; sudo chkconfig iptables off
+log Deactivating the firewall
+sudo service iptables stop; sudo chkconfig iptables off
+
+log ~~~~~~~~~~~~ SUCCESS ~~~~~~~~~~~~~
