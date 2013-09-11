@@ -1,3 +1,7 @@
+PS1="[\u@ml \W]\\$"
+
+alias ll='ls -alh --color'
+
 export CARIDEN_ROOT=/opt/cariden
 export CARIDEN_HOME=/opt/cariden/software/mate/current
 export LD_LIBRARY_PATH=$CARIDEN_HOME/lib:$LD_LIBRARY_PATH
