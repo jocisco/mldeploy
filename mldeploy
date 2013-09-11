@@ -87,8 +87,9 @@ log Setting up the environment
 sudo mkdir -p /opt/cariden/etc/
 sudo cp MATE_Floating.lic /opt/cariden/etc
 sudo cp bashrc /opt/cariden/.bashrc
+sudo cp materc /opt/cariden/.materc
 sudo sh 'curl -s https://raw.github.com/jocisco/ml/master/materc >> /opt/cariden/.bashrc'
-sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc
+sudo chown cariden:cariden /opt/cariden/etc /opt/cariden/etc/MATE_Floating.lic /opt/cariden/.bashrc /opt/cariden/.materc
 
 log Restarting tomcat
 sudo -u cariden -s $ROOT_DIR/software/mate/current/bin/embedded_web_server -action start || die Failed to start tomcat
